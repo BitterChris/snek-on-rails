@@ -1,8 +1,11 @@
 class GameController < ApplicationController
-  before_action :log_payload, only: :start
 
   def start
-    @game = Game.new(params)
+    @game = Game.create(game_params)
+
+    if @game
+      head :ok
+    end
   end
 
   def move
@@ -14,7 +17,13 @@ class GameController < ApplicationController
   private
 
   def game_params
-    params.permit(:game, :board, :you)
+    {
+      game_id: params[:game][:id],
+      snek_id: params[:you][:id],
+      board_width: params[:board][:width],
+      board_height: params[:board][:height],
+      turn: params[:turn],
+    }
   end
 
   def find_game
