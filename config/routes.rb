@@ -1,3 +1,7 @@
 Rails.application.routes.draw do
-  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
+  root 'static#index'
+
+  post '/start', to: 'game#start'
+  post '/move', to: 'game#move'
+  post '/end', to: 'game#end'
 end
