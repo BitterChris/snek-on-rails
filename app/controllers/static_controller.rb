@@ -12,7 +12,7 @@ class StaticController < ApplicationController
     {
         "apiVersion": "1",
         "author": "Chrisoflurp",
-        "color": "#888888",
+        "color": "#D35400",
         "head": "shac-caffeine",
         "body": "bolt"
     }
