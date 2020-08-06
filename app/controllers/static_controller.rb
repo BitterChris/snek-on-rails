@@ -13,8 +13,8 @@ class StaticController < ApplicationController
         "apiVersion": "1",
         "author": "Chrisoflurp",
         "color": "#D35400",
-        "head": "shac-caffeine",
-        "body": "bolt"
+        "head": "shack-workout",
+        "tail": "small-rattle"
     }
     RESPONSE
   end

@@ -6,22 +6,12 @@ module GameUtilities
 
     attr_accessor :board, :snek
 
-    AVAILABLE_MOVES = %w(up down left right)
-    VERTICAL_MOVES = %w(up down)
-    HORIZONTAL_MOVES = %w(left right)
-
-    X_MOVE_MAPS = {
-        'right' => 1,
-        'left' => -1,
-    }
-
-    Y_MOVE_MAPS = {
-        'up' => 1,
-        'down' => -1,
-    }
-
     def move
-      { "move" => pick_direction }
+      direction = pick_direction
+
+      Rails.logger.info("[MOVE] Going to go #{direction}.")
+
+      { "move" => direction }
     end
 
     private
@@ -29,125 +19,121 @@ module GameUtilities
     def pick_direction
       moves = available_moves
 
-      if moves.length >= 2
-        directions_to_food(food_coords: nearest_food_coords, available_moves: moves)
-      else
-        moves.first
-      end
+      return moves.keys.first if moves.length == 1
+
+      best_next_move(moves: moves)
     end
 
-    def available_moves(moves: AVAILABLE_MOVES)
-      # [ 'up' ]
-      valid_moves = moves.reject { |move| !valid_move?(move: move) }
-
-      Rails.logger.info(valid_moves) #['up', 'left', 'down']
+    def available_moves
+      moves = coordinates_from_location(location: snek['head'])
+      valid_moves = moves.reject { |move| !valid_move?(coords: moves.dig(move)) }
 
       valid_moves.any? ? valid_moves : no_valid_moves
-    end
-
-    def available_future_moves(moves:)
-      # ['up', 'left']
-      moves.each_with_object({}) do |choice, future_moves|
-        future_moves[choice] = available_moves(moves: moves).count
-        Rails.logger.info(future_moves)
-      end.max_by { |_k, v| v }.first
     end
 
     def no_valid_moves
       Rails.logger.info('No good moves. Guess I\'ll die')
 
-      ['up']
+      'up'
     end
 
     def nearest_food_coords
       Finders::FoodFinder.new(food: board['food'], snek: snek).nearest
     end
 
-    def directions_to_food(food_coords:, available_moves:)
+    def directions_to_food(food_coords:)
       nearest_x = food_coords['x'] <=> snek['head']['x']
       nearest_y = food_coords['y'] <=> snek['head']['y']
-      moves = []
 
-      if nearest_x == 1
-        moves << 'right'
-      elsif nearest_x == -1
-        moves << 'left'
+      if (nearest_x == 1 && nearest_y == 1) || (nearest_x == 1 && nearest_y == 0)
+        %w(right up down left)
+      elsif nearest_x == 1 && nearest_y == -1
+        %w(right down up left)
+      elsif (nearest_x == -1 && nearest_y == 1) || (nearest_x == -1 && nearest_y == 0)
+        %w(left up down right)
+      elsif nearest_x == -1 && nearest_y == -1
+        %w(left down up right)
+      elsif nearest_x == 0 && nearest_y == 1
+        %w(up down left right)
+      elsif nearest_x == 0 && nearest_y == -1
+        %w(down up left right)
       end
+    end
 
-      if nearest_y == 1
-        moves << 'up'
-      elsif nearest_y == -1
-        moves << 'down'
-      end
+    def best_next_move(moves:)
+      moves_towards_food = directions_to_food(food_coords: nearest_food_coords)
+      good_moves = moves_towards_food.reject { |move| !moves.include?(move) }
+      best_moves = []
 
-      good_moves = available_moves - moves # ['up', 'left']
-
-      if good_moves.length == 2
-        available_future_moves(moves: moves)
+      if good_moves.length >= 2
+        good_moves.reject do |move|
+          best_moves << move if safe_next_move?(move: move)
+        end
+      elsif good_moves.length == 1
+        return good_moves.sample
       else
-        good_moves.first
+        return no_valid_moves
+      end
+
+      best_moves.first
+    end
+
+    def safe_next_move?(move:)
+      location = move_coords(move: move)
+      next_coords = coordinates_from_location(location: location)
+
+      next_coords.each do |_move, coord|
+        return true if valid_move?(coords: coord)
+      end
+
+      false
+    end
+
+    def move_coords(move:)
+      case move
+      when 'up'
+        { 'x' => snek['head']['x'], 'y' => snek['head']['y'] + 1 }
+      when 'down'
+        { 'x' => snek['head']['x'], 'y' => snek['head']['y'] - 1 }
+      when 'left'
+        { 'x' => snek['head']['x'] - 1, 'y' => snek['head']['y'] }
+      when 'right'
+        { 'x' => snek['head']['x'] + 1, 'y' => snek['head']['y'] }
       end
     end
 
-    #TODO: These all got more complex than they should've. They need to be simplified.
-    def vertical_move_coords(move:, coords: {})
-      x = coords['x'] || snek['head']['x']
-      y = coords['y'] || snek['head']['y']
+    def valid_move?(coords:)
+      still_on_board?(coords) && !eating_self?(coords) && !hitting_snake?(coords)
+    end
 
+    def eating_self?(move_coords)
+      snek['body'].any?(move_coords)
+    end
+
+    def still_on_board?(move_coords)
+      move_coords['x'].between?(0, board['width'] - 1) &&
+          move_coords['y'].between?(0, board['height'] - 1)
+    end
+
+    def hitting_snake?(move_coords)
+      snakes = Finders::SnakeFinder.new(snakes: board['snakes'], snek: snek).locations
+
+      return false if snakes.empty?
+
+      snakes.each do |position|
+        return true if position == move_coords
+      end
+
+      false
+    end
+
+    def coordinates_from_location(location:)
       {
-        'x' => x,
-        'y' => y + Y_MOVE_MAPS.dig(move),
+          'up' =>  { 'x' => location['x'], 'y' => location['y'] + 1 } ,
+          'down' => { 'x' => location['x'], 'y' => location['y'] - 1 },
+          'left' => { 'x' => location['x'] - 1, 'y' => location['y'] },
+          'right' => { 'x' => location['x'] + 1, 'y' => location['y'] },
       }
     end
-
-    def horizontal_move_coords(move:, coords: {})
-      x = coords['x'] || snek['head']['x']
-      y = coords['y'] || snek['head']['y']
-
-      {
-        'x' => x + X_MOVE_MAPS.dig(move),
-        'y' => y,
-      }
-    end
-
-    def next_vertical_move_coords(move:)
-      vertical_move_coords(move: move, coords: vertical_move_coords(move: move))
-    end
-
-    def next_horizontal_move_coords(move:)
-      horizontal_move_coords(move: move, coords: horizontal_move_coords(move: move))
-    end
   end
-
-  def valid_move?(move:)
-    coords = if VERTICAL_MOVES.include?(move)
-               vertical_move_coords(move: move)
-             elsif HORIZONTAL_MOVES.include?(move)
-               horizontal_move_coords(move: move)
-             end
-
-    still_on_board?(coords) && !eating_self?(coords) && !hitting_snake?(coords)
-  end
-
-  def eating_self?(move_coords)
-    snek['body'].any?(move_coords)
-  end
-
-  def still_on_board?(move_coords)
-    move_coords['x'].between?(0, board['width'] - 1) &&
-        move_coords['y'].between?(0, board['height'] - 1)
-  end
-
-  def hitting_snake?(move_coords)
-    snakes = Finders::SnakeFinder.new(snakes: board['snakes'], snek: snek).locations
-
-    return false if snakes.empty?
-
-    snakes.each do |position|
-      return true if position == move_coords
-    end
-
-    false
-  end
-
 end
