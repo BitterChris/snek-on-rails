@@ -17,6 +17,11 @@ module GameUtilities
         end
         all_snakes
       end
+
+      # Identify if snake is bigger or smaller
+      def edible?
+        #TODO: Make sure I'm looking at the right snake, check if I'm larger than it by length.
+      end
     end
   end
 end

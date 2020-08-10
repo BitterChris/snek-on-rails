@@ -37,31 +37,8 @@ module GameUtilities
       'up'
     end
 
-    def nearest_food_coords
-      Finders::FoodFinder.new(food: board['food'], snek: snek).nearest
-    end
-
-    def directions_to_food(food_coords:)
-      nearest_x = food_coords['x'] <=> snek['head']['x']
-      nearest_y = food_coords['y'] <=> snek['head']['y']
-
-      if (nearest_x == 1 && nearest_y == 1) || (nearest_x == 1 && nearest_y == 0)
-        %w(right up down left)
-      elsif nearest_x == 1 && nearest_y == -1
-        %w(right down up left)
-      elsif (nearest_x == -1 && nearest_y == 1) || (nearest_x == -1 && nearest_y == 0)
-        %w(left up down right)
-      elsif nearest_x == -1 && nearest_y == -1
-        %w(left down up right)
-      elsif nearest_x == 0 && nearest_y == 1
-        %w(up down left right)
-      elsif nearest_x == 0 && nearest_y == -1
-        %w(down up left right)
-      end
-    end
-
     def best_next_move(moves:)
-      moves_towards_food = directions_to_food(food_coords: nearest_food_coords)
+      moves_towards_food = Finders::FoodFinder.new(food: board['food'], snek: snek).directions_to_food
       good_moves = moves_towards_food.reject { |move| !moves.include?(move) }
       best_moves = []
 
