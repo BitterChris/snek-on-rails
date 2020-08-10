@@ -10,16 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_07_09_013336) do
+ActiveRecord::Schema.define(version: 2020_08_10_154445) do
 
   create_table "games", force: :cascade do |t|
     t.string "game_id"
     t.string "snek_id"
     t.integer "board_width"
     t.integer "board_height"
-    t.integer "turn"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.boolean "solo_game"
+    t.text "result"
   end
 
 end

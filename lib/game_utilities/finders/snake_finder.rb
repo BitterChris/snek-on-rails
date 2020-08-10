@@ -5,6 +5,7 @@ module GameUtilities
     class SnakeFinder < Finder
       attr_accessor :snakes
 
+      # Returns locations of all snakes on board as a flattened array of their coordinates
       def locations(include_snek: false)
         all_snakes = []
 
