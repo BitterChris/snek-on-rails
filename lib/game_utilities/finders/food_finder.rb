@@ -5,8 +5,6 @@ module GameUtilities
     class FoodFinder < Finder
       attr_accessor :food
 
-      # Sorted list of available movements towards nearest food
-      # One direction is never present since it will always be invalid to move back into snek
       def directions_to_food
         nearest_coords = food[nearest]
         nearest_x = nearest_coords['x'] <=> snek['head']['x']
@@ -29,15 +27,12 @@ module GameUtilities
 
       private
 
-      # Returns the coordinates of the nearest food piece to the snek
       def nearest
         @nearest ||= food.each_with_object([]) do |food, score|
           score << (food['x'] - snek['head']['x']).abs + (food['y'] - snek['head']['y']).abs
         end.each_with_index.min.last
       end
 
-      # Not in use
-      # Returns the coordinates of the farthest food piece to the snek
       def farthest
         @farthest ||= food.each_with_object([]) do |food, score|
           score << (food['x'] - snek['head']['x']).abs + (food['y'] - snek['head']['y']).abs
