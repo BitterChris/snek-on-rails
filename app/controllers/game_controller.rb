@@ -15,7 +15,7 @@ class GameController < ApplicationController
   def end
     @game.update(result: game_result)
 
-    Rails.logger.info("\n[GAME OVER] GAME ##{@game.id} HAS ENDED. YOU #{@game.result}!")
+    Rails.logger.info("\n[GAME OVER] GAME ##{@game.id} HAS ENDED. #{@game.result}")
 
     head :ok
   end
@@ -26,9 +26,6 @@ class GameController < ApplicationController
     {
         game_id: params[:game][:id],
         snek_id: params[:you][:id],
-        board_width: params[:board][:width],
-        board_height: params[:board][:height],
-        turn: params[:turn],
         solo_game: solo_game?,
     }
   end
@@ -44,14 +41,14 @@ class GameController < ApplicationController
   def game_result
     remaining_snake = params[:board][:snakes]
 
-    return "SOLO PLAY" if @game.solo_game
+    return "THIS WAS SOLO PLAY!" if @game.solo_game
 
-    if remaining_snake.first.dig('id') == @game.snek_id
-      "WON"
-    elsif remaining_snake.empty?
-      "DRAW"
+    if remaining_snake.empty?
+      "IT WAS A DRAW!"
+    elsif remaining_snake.first.dig('id') == @game.snek_id
+      "YOU WON!"
     else
-      "LOST"
+      "YOU LOST!"
     end
   end
 end
