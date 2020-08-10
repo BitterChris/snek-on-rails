@@ -1,9 +1,9 @@
 class Game < ApplicationRecord
-  after_save :log_new_game_details
+  after_commit :log_new_game_details
 
   private
 
   def log_new_game_details
-    Rails.logger.info("[NEW GAME CREATED] #{game_id}")
+    Rails.logger.info("\n[GAME STARTING] GAME ##{id} HAS BEGUN.")
   end
 end

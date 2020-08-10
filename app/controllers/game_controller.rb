@@ -1,7 +1,7 @@
 class GameController < ApplicationController
   include GameUtilities
 
-  before_action :find_game, only: [:move, :end]
+  before_action :find_game, only: [:end]
 
   def start
     @game = Game.create(game_params)
@@ -11,12 +11,8 @@ class GameController < ApplicationController
     end
   end
 
-  def move
-    render json: MovementPlanner.new(move_params).move
-  end
-
   def end
-    Rails.logger.info("\n\nGAME OVER")
+    Rails.logger.info("\n[GAME OVER] GAME ##{@game.id} HAS ENDED.")
 
     head :ok
   end
@@ -30,13 +26,6 @@ class GameController < ApplicationController
         board_width: params[:board][:width],
         board_height: params[:board][:height],
         turn: params[:turn],
-    }
-  end
-
-  def move_params
-    {
-        board: params[:board],
-        snek: params[:you],
     }
   end
 
