@@ -38,6 +38,9 @@ module GameUtilities
     end
 
     def best_next_move(moves:)
+      strategy = Strategies::GrowStrategy.new
+
+
       moves_towards_food = Finders::FoodFinder.new(food: board['food'], snek: snek).directions_to_food
       good_moves = moves_towards_food.reject { |move| !moves.include?(move) }
       best_moves = []
